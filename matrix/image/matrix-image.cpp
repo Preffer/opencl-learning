@@ -1,15 +1,15 @@
 #define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
-#include <utility>
 #include <iostream>
-#include <fstream>
 #include <string>
+#include <fstream>
+#include <CL/cl.hpp>
+
 using namespace cl;
 using namespace std;
 
 /*
- group by row, in each group have col's operation
-*/
+ * Always use row-major
+ */
 
 int main(int argc, char *argv[]) {
 	// Create the two input vectors and one result matrix

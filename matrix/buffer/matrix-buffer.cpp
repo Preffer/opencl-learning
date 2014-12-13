@@ -1,15 +1,15 @@
 #define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
-#include <utility>
 #include <iostream>
-#include <fstream>
 #include <string>
+#include <fstream>
+#include <CL/cl.hpp>
+
 using namespace cl;
 using namespace std;
 
 /*
-group by row, in each group have col's operation
-*/
+ * Always use row-major
+ */
 
 int main(int argc, char *argv[]) {
 	// Create the two input vectors and one result matrix
@@ -89,33 +89,19 @@ int main(int argc, char *argv[]) {
 	}
 
 	if(argc == 2){
-		ofstream fout;
-		fout.open("a.txt");
+		ofstream outa("a.txt");
+		ofstream outb("b.txt");
+		ofstream outc("c.txt");
 		for (int row = 0; row < R; row++) {
 			for (int col = 0; col < R; col ++) {
-				fout << A[row*R + col] << " ";
+				outa << A[row * R + col] << " ";
+				outb << B[row * R + col] << " ";
+				outc << C[row * R + col] << " ";
 			}
-			fout << endl;
+			outa << endl;
+			outb << endl;
+			outc << endl;
 		}
-		fout.close();
-
-		fout.open("b.txt");
-		for (int row = 0; row < R; row++) {
-			for (int col = 0; col < R; col ++) {
-				fout << B[row*R + col] << " ";
-			}
-			fout << endl;
-		}
-		fout.close();
-
-		fout.open("c.txt");
-		for (int row = 0; row < R; row++) {
-			for (int col = 0; col < R; col ++) {
-				fout << C[row*R + col] << " ";
-			}
-			fout << endl;
-		}
-		fout.close();
 	}
 
 	return 0;
