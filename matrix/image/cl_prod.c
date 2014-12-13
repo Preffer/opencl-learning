@@ -5,12 +5,11 @@ __kernel void prod(__read_only image2d_t A, __read_only image2d_t B, __write_onl
  	int col = get_global_id(0);
 	int row = get_global_id(1);
 
-	float sum = read_imagef(A, sampler, (int2)(col, row)).x + read_imagef(B, sampler, (int2)(col, row)).x;
+	float sum = 0;
 
-	/*
 	for (int i = 0; i < R; i++) {
 		sum += read_imagef(A, sampler, (int2)(i, row)).x * read_imagef(B, sampler, (int2)(col, i)).x;
-	}*/
+	}
 
 	write_imagef(C, (int2)(col, row), sum);
 }

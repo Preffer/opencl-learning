@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
 	float* A = new float[R * R];
 	float* B = new float[R * R];
-	float* C = new float[R * R];
+	float* C;
 
 	for (int i = 0; i < R * R; i++) {
 		A[i] = rand() % 100;
@@ -75,46 +75,41 @@ int main(int argc, char *argv[]) {
 		region[1] = R;
 		region[2] = 1;
 
-		// Create matrix
 		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
 		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
 		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY, format, R, R);
 
-		// Copy matrix A and B to the memory buffers
 		queue.enqueueWriteImage(matrixA, CL_TRUE, origin, region, 0, 0, A);
 		queue.enqueueWriteImage(matrixB, CL_TRUE, origin, region, 0, 0, B);
 
-		// Set arguments to kernel
 		kernel.setArg(0, matrixA);
 		kernel.setArg(1, matrixB);
 		kernel.setArg(2, matrixC);
 		kernel.setArg(3, R);
 
-		// Run the kernel on specific ND range
 		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(R, R), NullRange);
 
-		// Read buffer C into a local list
 		queue.finish();
-		queue.enqueueReadImage(matrixC, CL_TRUE, origin, region, 0, 0, C);
+		C = (float*) queue.enqueueMapImage(matrixC, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(R * sizeof(float)), NULL);
+
+		if(argc == 2){
+			ofstream outa("a.txt");
+			ofstream outb("b.txt");
+			ofstream outc("c.txt");
+			for (int row = 0; row < R; row++) {
+				for (int col = 0; col < R; col ++) {
+					outa << A[row * R + col] << " ";
+					outb << B[row * R + col] << " ";
+					outc << C[row * R + col] << " ";
+				}
+				outa << endl;
+				outb << endl;
+				outc << endl;
+			}
+		}
 
 	} catch(Error error) {
 		cout << error.what() << "(" << error.err() << ")" << endl;
-	}
-
-	if(argc == 2){
-		ofstream outa("a.txt");
-		ofstream outb("b.txt");
-		ofstream outc("c.txt");
-		for (int row = 0; row < R; row++) {
-			for (int col = 0; col < R; col ++) {
-				outa << A[row * R + col] << " ";
-				outb << B[row * R + col] << " ";
-				outc << C[row * R + col] << " ";
-			}
-			outa << endl;
-			outb << endl;
-			outc << endl;
-		}
 	}
 
 	return 0;
