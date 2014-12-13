@@ -20,9 +20,9 @@ int main(int argc, char *argv[]) {
 
 	const int R = stoi(argv[1]);
 
-	cl_float* A = new cl_float[R * R];
-	cl_float* B = new cl_float[R * R];
-	cl_float* C = new cl_float[R * R];
+	float* A = new float[R * R];
+	float* B = new float[R * R];
+	float* C = new float[R * R];
 
 	for (int i = 0; i < R * R; i++) {
 		A[i] = rand() % 100;
