@@ -1,5 +1,9 @@
 # Swap files
 *~
+
+# Output files
+*.txt
+
 # Compiled Object files
 *.slo
 *.lo
