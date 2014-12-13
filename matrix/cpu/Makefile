@@ -1,5 +1,5 @@
 CC		= g++
-CPPFLAGS	= -std=c++11 -Wall -march=native -O3
+CPPFLAGS	= -std=c++11 -Wall -fopenmp -march=native -O3
 LDFLAGS		=
 SRCS		= matrix-cpu.cpp
 OBJS		= $(SRCS:.cpp=.o)

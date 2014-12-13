@@ -8,7 +8,7 @@ using namespace cl;
 using namespace std;
 
 /*
-group by row, in each group have col's operation
+ group by row, in each group have col's operation
 */
 
 int main(int argc, char *argv[]) {
@@ -20,9 +20,9 @@ int main(int argc, char *argv[]) {
 
 	const int R = stoi(argv[1]);
 
-	float* A = new float[R * R];
-	float* B = new float[R * R];
-	float* C = new float[R * R];
+	cl_float* A = new cl_float[R * R];
+	cl_float* B = new cl_float[R * R];
+	cl_float* C = new cl_float[R * R];
 
 	for (int i = 0; i < R * R; i++) {
 		A[i] = rand() % 100;
@@ -62,60 +62,59 @@ int main(int argc, char *argv[]) {
 		// Make kernel
 		Kernel kernel(program, "prod");
 
+		// Define format
+		ImageFormat format(CL_R, CL_FLOAT);
+
+		cl::size_t<3> origin;
+		origin[0] = 0;
+		origin[1] = 0;
+		origin[2] = 0;
+		
+		cl::size_t<3> region;
+		region[0] = R;
+		region[1] = R;
+		region[2] = 1;
+
 		// Create matrix
-		Buffer bufferA = Buffer(context, CL_MEM_READ_ONLY, R * R * sizeof(float));
-		Buffer bufferB = Buffer(context, CL_MEM_READ_ONLY, R * R * sizeof(float));
-		Buffer bufferC = Buffer(context, CL_MEM_WRITE_ONLY, R * R * sizeof(float));
+		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
+		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
+		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY, format, R, R);
 
 		// Copy matrix A and B to the memory buffers
-		queue.enqueueWriteBuffer(bufferA, CL_TRUE, 0, R * R * sizeof(float), A);
-		queue.enqueueWriteBuffer(bufferB, CL_TRUE, 0, R * R * sizeof(float), B);
+		queue.enqueueWriteImage(matrixA, CL_TRUE, origin, region, 0, 0, A);
+		queue.enqueueWriteImage(matrixB, CL_TRUE, origin, region, 0, 0, B);
 
 		// Set arguments to kernel
-		kernel.setArg(0, bufferA);
-		kernel.setArg(1, bufferB);
-		kernel.setArg(2, bufferC);
+		kernel.setArg(0, matrixA);
+		kernel.setArg(1, matrixB);
+		kernel.setArg(2, matrixC);
 		kernel.setArg(3, R);
 
 		// Run the kernel on specific ND range
-		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(R * R), NullRange);
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(R, R), NullRange);
 
 		// Read buffer C into a local list
 		queue.finish();
-		queue.enqueueReadBuffer(bufferC, CL_TRUE, 0, R * R * sizeof(float), C);
+		queue.enqueueReadImage(matrixC, CL_TRUE, origin, region, 0, 0, C);
 
 	} catch(Error error) {
 		cout << error.what() << "(" << error.err() << ")" << endl;
 	}
 
 	if(argc == 2){
-		ofstream fout;
-		fout.open("a.txt");
+		ofstream outa("a.txt");
+		ofstream outb("b.txt");
+		ofstream outc("c.txt");
 		for (int row = 0; row < R; row++) {
 			for (int col = 0; col < R; col ++) {
-				fout << A[row*R + col] << " ";
+				outa << A[row * R + col] << " ";
+				outb << B[row * R + col] << " ";
+				outc << C[row * R + col] << " ";
 			}
-			fout << endl;
+			outa << endl;
+			outb << endl;
+			outc << endl;
 		}
-		fout.close();
-
-		fout.open("b.txt");
-		for (int row = 0; row < R; row++) {
-			for (int col = 0; col < R; col ++) {
-				fout << B[row*R + col] << " ";
-			}
-			fout << endl;
-		}
-		fout.close();
-
-		fout.open("c.txt");
-		for (int row = 0; row < R; row++) {
-			for (int col = 0; col < R; col ++) {
-				fout << C[row*R + col] << " ";
-			}
-			fout << endl;
-		}
-		fout.close();
 	}
 
 	return 0;
