@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
 	try {
 		// Get available platforms
-		std::vector <Platform> platforms;
+		std::vector<Platform> platforms;
 		Platform::get(&platforms);
 
 		// Select the default platform and create a context using this platform and the GPU
@@ -43,14 +43,14 @@ int main(int argc, char *argv[]) {
 		Context context(CL_DEVICE_TYPE_GPU, cps);
 
 		// Get a list of devices on this platform
-		std::vector < Device > devices = context.getInfo < CL_CONTEXT_DEVICES > ();
+		std::vector<Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
 		// Create a command queue and use the first device
 		CommandQueue queue = CommandQueue(context, devices[0]);
 
 		// Read source file
 		ifstream sourceFile("cl_prod.c");
-		std::string sourceCode(istreambuf_iterator <char>(sourceFile), (istreambuf_iterator <char>()));
+		std::string sourceCode(istreambuf_iterator<char>(sourceFile), (istreambuf_iterator<char>()));
 		Program::Sources source(1, make_pair(sourceCode.c_str(), sourceCode.length() + 1));
 
 		// Make program of the source code in the context
