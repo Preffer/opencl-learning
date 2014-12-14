@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 		delete mapSize;
 
-		if(argc >= 3){
+		if(argc <= 3){
 			ofstream outa("a.txt");
 			ofstream outb("b.txt");
 			ofstream outc("c.txt");
