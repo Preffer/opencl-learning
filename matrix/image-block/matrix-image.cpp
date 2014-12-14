@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <CL/cl.hpp>
+#include <sys/time.h>
 
 using namespace cl;
 using namespace std;
@@ -11,9 +12,17 @@ using namespace std;
  * Always use row-major
  */
 
+struct timeval tpstart, tpend;
+double timeuse;
+
+void logTime(std::string message);
+
 int main(int argc, char *argv[]) {
+
+	gettimeofday(&tpstart, NULL);
+
 	if (argc <= 1) {
-		cout << "Usage: ./matrix (R)" << endl;
+		cout << "Usage: ./matrix-image (R)" << endl;
 		return 2;
 	}
 
@@ -82,43 +91,75 @@ int main(int argc, char *argv[]) {
 		region[1] = SIZE;
 		region[2] = 1;
 
-		Image2D matrixA1 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A1);
-		Image2D matrixA2 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A2);
-		Image2D matrixA3 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A3);
-		Image2D matrixA4 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A4);
+		kernel.setArg(0, SIZE);
 
-		Image2D matrixB1 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B1);
-		Image2D matrixB2 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B2);
-		Image2D matrixB3 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B3);
-		Image2D matrixB4 = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B4);
-
-		Image2D matrixC1 = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
-		Image2D matrixC2 = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
-		Image2D matrixC3 = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
-		Image2D matrixC4 = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
-
-		kernel.setArg(0, matrixA1);
-		kernel.setArg(1, matrixA2);
-		kernel.setArg(2, matrixA3);
-		kernel.setArg(3, matrixA4);
-		kernel.setArg(4, matrixB1);
-		kernel.setArg(5, matrixB2);
-		kernel.setArg(6, matrixB3);
-		kernel.setArg(7, matrixB4);
-		kernel.setArg(8, matrixC1);
-		kernel.setArg(9, matrixC2);
-		kernel.setArg(10, matrixC3);
-		kernel.setArg(11, matrixC4);
-		kernel.setArg(12, SIZE);
-
-		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE, 4), NullRange);
-
+		Image2D* matrixA1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A1);
+		Image2D* matrixA2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A2);
+		Image2D* matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B1);
+		Image2D* matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B3);
+		Image2D* matrixC1 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		kernel.setArg(1, *matrixA1);
+		kernel.setArg(2, *matrixA2);
+		kernel.setArg(3, *matrixB1);
+		kernel.setArg(4, *matrixB3);
+		kernel.setArg(5, *matrixC1);
+		logTime("Start Computation Part 1...");
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 		queue.finish();
+		logTime("Finish Computation Part 1");
+		C1 = (float*) queue.enqueueMapImage(*matrixC1, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		delete matrixC1;
 
-		C1 = (float*) queue.enqueueMapImage(matrixC1, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
-		C2 = (float*) queue.enqueueMapImage(matrixC2, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
-		C3 = (float*) queue.enqueueMapImage(matrixC3, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
-		C4 = (float*) queue.enqueueMapImage(matrixC4, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		Image2D* matrixB2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B2);
+		Image2D* matrixB4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B4);
+		Image2D* matrixC2 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		kernel.setArg(1, *matrixA1);
+		kernel.setArg(2, *matrixA2);
+		kernel.setArg(3, *matrixB2);
+		kernel.setArg(4, *matrixB4);
+		kernel.setArg(5, *matrixC2);
+		logTime("Start Computation Part 2...");
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
+		queue.finish();
+		logTime("Finish Computation Part 2");
+		C2 = (float*) queue.enqueueMapImage(*matrixC2, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		delete matrixA1;
+		delete matrixA2;
+		delete matrixC2;
+
+		Image2D* matrixA3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A3);
+		Image2D* matrixA4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A4);
+		Image2D* matrixC3 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		kernel.setArg(1, *matrixA3);
+		kernel.setArg(2, *matrixA4);
+		kernel.setArg(3, *matrixB2);
+		kernel.setArg(4, *matrixB4);
+		kernel.setArg(5, *matrixC3);
+		logTime("Start Computation Part 3...");
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
+		queue.finish();
+		logTime("Finish Computation Part 3");
+		C3 = (float*) queue.enqueueMapImage(*matrixC3, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		delete matrixB2;
+		delete matrixB4;
+		delete matrixC3;
+
+		Image2D* matrixC4 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		kernel.setArg(1, *matrixA3);
+		kernel.setArg(2, *matrixA4);
+		kernel.setArg(3, *matrixB1);
+		kernel.setArg(4, *matrixB3);
+		kernel.setArg(5, *matrixC4);
+		logTime("Start Computation Part 4...");
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
+		queue.finish();
+		logTime("Finish Computation Part 4");
+		C4 = (float*) queue.enqueueMapImage(*matrixC4, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		delete matrixA3;
+		delete matrixA4;
+		delete matrixB1;
+		delete matrixB3;
+		delete matrixC4;
 
 		if(argc == 2){
 			ofstream outa("a.txt");
@@ -165,4 +206,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	return 0;
+}
+
+void logTime(std::string message) {
+	gettimeofday(&tpend, NULL);
+	timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
+	timeuse /= 1000000;
+	cout << "[" << timeuse << "] " << message << endl;
 }
