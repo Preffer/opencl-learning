@@ -73,17 +73,17 @@ int main(int argc, char *argv[]) {
 		code += "__write_only image2d_t C) { \
 					int col = get_global_id(0); \
 					int row = get_global_id(1); \
-						float sum = 0; \
-						for (int i = 0; i < SIZE; i++) { \
-							int2 coordA = (int2)(i, row); \
-							int2 coordB = (int2)(col, i);";
+					float sum = 0; \
+					for (int i = 0; i < SIZE; i++) { \
+						int2 coordA = (int2)(i, row); \
+						int2 coordB = (int2)(col, i);";
 
 		for(int i = 0; i < SLICE; i++){
 			code += "sum += read_imagef(A" + to_string(i) + ", sampler, coordA).x * read_imagef(B" + to_string(i) + ", sampler, coordB).x;";
 		}
 
-		code += "		} \
-						write_imagef(C, (int2)(col, row), sum); \
+		code += "	} \
+					write_imagef(C, (int2)(col, row), sum); \
 				}";
 
 		Program::Sources source(1, make_pair(code.c_str(), code.length() + 1));
