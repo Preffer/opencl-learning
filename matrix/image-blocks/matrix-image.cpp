@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 				logTime("Start Computation Block (" + to_string(row) + ", " + to_string(col) + ")...");
 				queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 				queue.finish();
-				logTime("Finish Computation Block (" + to_string(row) + ", " + to_string(col) + ")...");
+				logTime("Finish Computation Block (" + to_string(row) + ", " + to_string(col) + ")");
 				
 				C[row * SLICE + col] = (float*) queue.enqueueMapImage(*matrixC, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 				
@@ -151,14 +151,17 @@ int main(int argc, char *argv[]) {
 			ofstream outc("c.txt");
 
 			for(int blockRow = 0; blockRow < SLICE; blockRow++){
-				for(int blockCol = 0; blockCol < SLICE; blockCol++){
-					for(int row = 0; row < SIZE; row++){
+				for(int row = 0; row < SIZE; row++){
+					for(int blockCol = 0; blockCol < SLICE; blockCol++){
 						for(int col = 0; col < SIZE; col++){
 							outa << A[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
 							outb << B[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
 							outc << C[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
 						}
 					}
+					outa << endl;
+					outb << endl;
+					outc << endl;
 				}
 			}
 		}
