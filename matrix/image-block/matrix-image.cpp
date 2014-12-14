@@ -98,11 +98,11 @@ int main(int argc, char *argv[]) {
 
 		kernel.setArg(0, SIZE);
 
-		Image2D* matrixA1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A1);
-		Image2D* matrixA2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A2);
-		Image2D* matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B1);
-		Image2D* matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B3);
-		Image2D* matrixC1 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		Image2D* matrixA1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A1);
+		Image2D* matrixA2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A2);
+		Image2D* matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B1);
+		Image2D* matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B3);
+		Image2D* matrixC1 = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
 		kernel.setArg(1, *matrixA1);
 		kernel.setArg(2, *matrixA2);
 		kernel.setArg(3, *matrixB1);
@@ -117,9 +117,9 @@ int main(int argc, char *argv[]) {
 		delete matrixB3;
 		delete matrixC1;
 
-		Image2D* matrixB2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B2);
-		Image2D* matrixB4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B4);
-		Image2D* matrixC2 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		Image2D* matrixB2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B2);
+		Image2D* matrixB4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B4);
+		Image2D* matrixC2 = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
 		kernel.setArg(1, *matrixA1);
 		kernel.setArg(2, *matrixA2);
 		kernel.setArg(3, *matrixB2);
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
 		delete matrixA2;
 		delete matrixC2;
 
-		Image2D* matrixA3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A3);
-		Image2D* matrixA4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A4);
-		Image2D* matrixC3 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		Image2D* matrixA3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A3);
+		Image2D* matrixA4 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A4);
+		Image2D* matrixC3 = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
 		kernel.setArg(1, *matrixA3);
 		kernel.setArg(2, *matrixA4);
 		kernel.setArg(3, *matrixB2);
@@ -151,9 +151,9 @@ int main(int argc, char *argv[]) {
 		delete matrixB4;
 		delete matrixC3;
 
-		matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B1);
-		matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B3);
-		Image2D* matrixC4 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+		matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B1);
+		matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B3);
+		Image2D* matrixC4 = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
 		kernel.setArg(1, *matrixA3);
 		kernel.setArg(2, *matrixA4);
 		kernel.setArg(3, *matrixB1);
