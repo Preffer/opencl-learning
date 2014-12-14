@@ -216,20 +216,15 @@ int main(int argc, char *argv[]) {
 		cout << error.what() << "(" << error.err() << ")" << endl;
 	}
 
-	delete A1;
-	delete A2;
-	delete A3;
-	delete A4;
+	delete[] A1;
+	delete[] A2;
+	delete[] A3;
+	delete[] A4;
 
-	delete B1;
-	delete B2;
-	delete B3;
-	delete B4;
-
-	delete C1;
-	delete C2;
-	delete C3;
-	delete C4;
+	delete[] B1;
+	delete[] B2;
+	delete[] B3;
+	delete[] B4;
 
 	return 0;
 }
