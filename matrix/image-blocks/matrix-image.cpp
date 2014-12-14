@@ -114,9 +114,12 @@ int main(int argc, char *argv[]) {
 		Image2D* matrixC = NULL;
 
 		for(int row = 0; row < SLICE; row++){
+			for(int i = 0; i < SLICE; i++){
+				matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A[row * SLICE + i]);
+				kernel.setArg(1 + 2 * i, *(matrixA[i]));
+			}
 			for(int col = 0; col < SLICE; col++){
 				for(int i = 0; i < SLICE; i++){
-					matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A[row * SLICE + i]);
 					matrixB[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B[i * SLICE + col]);
 					kernel.setArg(1 + 2 * i, *(matrixA[i]));
 					kernel.setArg(2 + 2 * i, *(matrixB[i]));
@@ -134,7 +137,6 @@ int main(int argc, char *argv[]) {
 				for(int i = 0; i < SLICE; i++){
 					delete matrixB[i];
 				}
-
 				delete matrixC;
 			}
 			for(int i = 0; i < SLICE; i++){
@@ -168,6 +170,14 @@ int main(int argc, char *argv[]) {
 	} catch(Error error) {
 		cout << error.what() << "(" << error.err() << ")" << endl;
 	}
+
+	for(int i = 0; i < SLICE * SLICE; i++){
+		delete[] A[i];
+		delete[] B[i];
+	}
+	delete[] A;
+	delete[] B;
+	delete[] C;
 
 	return 0;
 }
