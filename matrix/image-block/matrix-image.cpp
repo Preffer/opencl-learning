@@ -94,6 +94,8 @@ int main(int argc, char *argv[]) {
 		region[1] = SIZE;
 		region[2] = 1;
 
+		::size_t* mapSize = new ::size_t(SIZE * sizeof(float));
+
 		kernel.setArg(0, SIZE);
 
 		Image2D* matrixA1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A1);
@@ -110,7 +112,7 @@ int main(int argc, char *argv[]) {
 		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 		queue.finish();
 		logTime("Finish Computation Part 1");
-		C1 = (float*) queue.enqueueMapImage(*matrixC1, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		C1 = (float*) queue.enqueueMapImage(*matrixC1, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 		delete matrixB1;
 		delete matrixB3;
 		delete matrixC1;
@@ -127,7 +129,7 @@ int main(int argc, char *argv[]) {
 		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 		queue.finish();
 		logTime("Finish Computation Part 2");
-		C2 = (float*) queue.enqueueMapImage(*matrixC2, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		C2 = (float*) queue.enqueueMapImage(*matrixC2, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 		delete matrixA1;
 		delete matrixA2;
 		delete matrixC2;
@@ -144,7 +146,7 @@ int main(int argc, char *argv[]) {
 		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 		queue.finish();
 		logTime("Finish Computation Part 3");
-		C3 = (float*) queue.enqueueMapImage(*matrixC3, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		C3 = (float*) queue.enqueueMapImage(*matrixC3, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 		delete matrixB2;
 		delete matrixB4;
 		delete matrixC3;
@@ -161,12 +163,14 @@ int main(int argc, char *argv[]) {
 		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 		queue.finish();
 		logTime("Finish Computation Part 4");
-		C4 = (float*) queue.enqueueMapImage(*matrixC4, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		C4 = (float*) queue.enqueueMapImage(*matrixC4, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 		delete matrixA3;
 		delete matrixA4;
 		delete matrixB1;
 		delete matrixB3;
 		delete matrixC4;
+
+		delete mapSize;
 
 		if(argc == 2){
 			ofstream outa("a.txt");
@@ -211,6 +215,21 @@ int main(int argc, char *argv[]) {
 	} catch(Error error) {
 		cout << error.what() << "(" << error.err() << ")" << endl;
 	}
+
+	delete A1;
+	delete A2;
+	delete A3;
+	delete A4;
+
+	delete B1;
+	delete B2;
+	delete B3;
+	delete B4;
+
+	delete C1;
+	delete C2;
+	delete C3;
+	delete C4;
 
 	return 0;
 }
