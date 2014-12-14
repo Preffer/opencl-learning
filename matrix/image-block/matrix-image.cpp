@@ -111,6 +111,8 @@ int main(int argc, char *argv[]) {
 		queue.finish();
 		logTime("Finish Computation Part 1");
 		C1 = (float*) queue.enqueueMapImage(*matrixC1, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(SIZE * sizeof(float)), NULL);
+		delete matrixB1;
+		delete matrixB3;
 		delete matrixC1;
 
 		Image2D* matrixB2 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B2);
@@ -147,6 +149,8 @@ int main(int argc, char *argv[]) {
 		delete matrixB4;
 		delete matrixC3;
 
+		matrixB1 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B1);
+		matrixB3 = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B3);
 		Image2D* matrixC4 = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
 		kernel.setArg(1, *matrixA3);
 		kernel.setArg(2, *matrixA4);
