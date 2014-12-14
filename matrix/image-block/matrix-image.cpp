@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	try {
+		logTime("Initializing OpenCL...");
 		std::vector<Platform> platforms;
 		Platform::get(&platforms);
 
@@ -78,6 +79,8 @@ int main(int argc, char *argv[]) {
 		Program program = Program(context, source);
 		program.build(devices);
 		Kernel kernel(program, "prod");
+
+		logTime("Finish initialize OpenCL");
 
 		ImageFormat format(CL_R, CL_FLOAT);
 
