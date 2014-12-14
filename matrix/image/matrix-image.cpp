@@ -12,7 +12,6 @@ using namespace std;
  */
 
 int main(int argc, char *argv[]) {
-	// Create the two input vectors and one result matrix
 	if (argc < 2) {
 		cout << "Usage: ./matrix (R)" << endl;
 		return 2;
@@ -30,11 +29,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	try {
-		// Get available platforms
 		std::vector<Platform> platforms;
 		Platform::get(&platforms);
 
-		// Select the default platform and create a context using this platform and the GPU
 		cl_context_properties cps[3] = {
 			CL_CONTEXT_PLATFORM,
 			(cl_context_properties) (platforms[0]) (),
@@ -42,27 +39,18 @@ int main(int argc, char *argv[]) {
 		};
 		Context context(CL_DEVICE_TYPE_GPU, cps);
 
-		// Get a list of devices on this platform
 		std::vector<Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
-		// Create a command queue and use the first device
 		CommandQueue queue = CommandQueue(context, devices[0]);
 
-		// Read source file
 		ifstream sourceFile("cl_prod.c");
 		std::string sourceCode(istreambuf_iterator<char>(sourceFile), (istreambuf_iterator<char>()));
 		Program::Sources source(1, make_pair(sourceCode.c_str(), sourceCode.length() + 1));
 
-		// Make program of the source code in the context
 		Program program = Program(context, source);
-
-		// Build program for these specific devices
 		program.build(devices);
-
-		// Make kernel
 		Kernel kernel(program, "prod");
 
-		// Define format
 		ImageFormat format(CL_R, CL_FLOAT);
 
 		cl::size_t<3> origin;
@@ -75,12 +63,9 @@ int main(int argc, char *argv[]) {
 		region[1] = R;
 		region[2] = 1;
 
-		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
-		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY, format, R, R);
-		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY, format, R, R);
-
-		queue.enqueueWriteImage(matrixA, CL_TRUE, origin, region, 0, 0, A);
-		queue.enqueueWriteImage(matrixB, CL_TRUE, origin, region, 0, 0, B);
+		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, R, R, 0, A);
+		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, R, R, 0, B);
+		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, R, R);
 
 		kernel.setArg(0, matrixA);
 		kernel.setArg(1, matrixB);
