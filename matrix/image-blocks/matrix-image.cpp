@@ -121,7 +121,6 @@ int main(int argc, char *argv[]) {
 			for(int col = 0; col < SLICE; col++){
 				for(int i = 0; i < SLICE; i++){
 					matrixB[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B[i * SLICE + col]);
-					kernel.setArg(1 + 2 * i, *(matrixA[i]));
 					kernel.setArg(2 + 2 * i, *(matrixB[i]));
 				}
 				matrixC = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
