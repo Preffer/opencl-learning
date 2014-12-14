@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
 
 		CommandQueue queue = CommandQueue(context, devices[0]);
 
-		ifstream sourceFile("cl_prod.c");
 		std::string code;
 		code += "__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;";
 		code +=	"__kernel void prod(const int SIZE, ";
