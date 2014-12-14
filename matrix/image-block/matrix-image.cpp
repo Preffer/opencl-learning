@@ -39,10 +39,10 @@ int main(int argc, char *argv[]) {
 	float* B3 = new float[SIZE * SIZE];
 	float* B4 = new float[SIZE * SIZE];
 
-	float* C1;
-	float* C2;
-	float* C3;
-	float* C4;
+	float* C1 = NULL;
+	float* C2 = NULL;
+	float* C3 = NULL;
+	float* C4 = NULL;
 
 	for (int i = 0; i < SIZE * SIZE; i++) {
 		A1[i] = rand() % 100;
