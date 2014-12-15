@@ -21,14 +21,19 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tpstart, NULL);
 
-	if (argc <= 2) {
-		cout << "Usage: ./matrix-image (Rank) (Slice)" << endl;
-		return 2;
+	if (argc < 3) {
+		cout << "Usage: ./matrix-image (rank) (slice)" << endl;
+		return -1;
 	}
 
 	const int RANK = stoi(argv[1]);
 	const int SLICE = stoi(argv[2]);
 	const int SIZE = RANK / SLICE;
+
+	if(RANK != SLICE * SIZE){
+		cout << "Matrix with rank " << RANK << " can't be slice into " << SLICE << "*" << SLICE << " parts";
+		return -2;
+	}
 
 	float** A = new float*[SLICE * SLICE];
 	float** B = new float*[SLICE * SLICE];
@@ -144,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 		delete mapSize;
 
-		if(argc <= 3){
+		if(argc < 4){
 			ofstream outa("a.txt");
 			ofstream outb("b.txt");
 			ofstream outc("c.txt");
