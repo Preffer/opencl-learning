@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 		return -2;
 	}
 
+	logTime("Generating Matrix...");
 	float** A = new float*[SLICE * SLICE];
 	float** B = new float*[SLICE * SLICE];
 	float** C = new float*[SLICE * SLICE];
