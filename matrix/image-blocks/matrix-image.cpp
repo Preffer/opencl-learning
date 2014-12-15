@@ -62,7 +62,8 @@ int main(int argc, char *argv[]) {
 
 		std::string code;
 		code += "__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;";
-		code +=	"__kernel void prod(const int SIZE, ";
+		code += "__constant int SIZE = " + to_string(SIZE) + ";";
+		code +=	"__kernel void prod(";
 		
 		for(int i = 0; i < SLICE; i++){
 			code += "__read_only image2d_t A" + to_string(i) + ", ";
@@ -78,7 +79,7 @@ int main(int argc, char *argv[]) {
 						int2 coordB = (int2)(col, i);";
 
 		for(int i = 0; i < SLICE; i++){
-			code += "sum += read_imagef(A" + to_string(i) + ", sampler, coordA).x * read_imagef(B" + to_string(i) + ", sampler, coordB).x;";
+			code += 	"sum += read_imagef(A" + to_string(i) + ", sampler, coordA).x * read_imagef(B" + to_string(i) + ", sampler, coordB).x;";
 		}
 
 		code += "	} \
@@ -107,8 +108,6 @@ int main(int argc, char *argv[]) {
 
 		::size_t* mapSize = new ::size_t(SIZE * sizeof(float));
 
-		kernel.setArg(0, SIZE);
-
 		Image2D** matrixA = new Image2D*[SLICE];
 		Image2D** matrixB = new Image2D*[SLICE];
 		Image2D* matrixC = NULL;
@@ -116,15 +115,15 @@ int main(int argc, char *argv[]) {
 		for(int row = 0; row < SLICE; row++){
 			for(int i = 0; i < SLICE; i++){
 				matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, A[row * SLICE + i]);
-				kernel.setArg(1 + 2 * i, *(matrixA[i]));
+				kernel.setArg(2 * i, *(matrixA[i]));
 			}
 			for(int col = 0; col < SLICE; col++){
 				for(int i = 0; i < SLICE; i++){
 					matrixB[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, SIZE, SIZE, 0, B[i * SLICE + col]);
-					kernel.setArg(2 + 2 * i, *(matrixB[i]));
+					kernel.setArg(2 * i + 1, *(matrixB[i]));
 				}
 				matrixC = new Image2D(context, CL_MEM_WRITE_ONLY, format, SIZE, SIZE);
-				kernel.setArg(2 * SLICE + 1, *matrixC);
+				kernel.setArg(2 * SLICE, *matrixC);
 
 				logTime("Start Computation Block (" + to_string(row) + ", " + to_string(col) + ")...");
 				queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
