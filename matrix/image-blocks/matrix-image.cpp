@@ -79,12 +79,22 @@ int main(int argc, char *argv[]) {
 		code += "__write_only image2d_t C) { \
 					const int col = get_global_id(0); \
 					const int row = get_global_id(1); \
-					float sum = 0;";
-
+					float sum = 0; \
+					int localID = get_local_id(0); \
+					int localSize = get_local_size(0); \
+					int cursor; \
+					__local float cacheA[" + to_string(SIZE) + "];";
 
 		for(int j = 0; j < SLICE; j++){
+			code += "for(cursor = 0; cursor < SIZE; cursor += localSize){ \
+						cacheA[cursor + localID] = read_imagef(A" + to_string(j) + ", sampler, (int2)(cursor + localID, row)).x; \
+					} \
+					if(cursor + localID < SIZE){ \
+						cacheA[cursor + localID] = read_imagef(A" + to_string(j) + ", sampler, (int2)(cursor + localID, row)).x; \
+					} \
+					barrier(CLK_LOCAL_MEM_FENCE);";
 			code += "for (int i = 0; i < SIZE; i++) { \
-						sum += read_imagef(A" + to_string(j) + ", sampler, (int2)(i, row)).x * read_imagef(B" + to_string(j) + ", sampler, (int2)(col, i)).x; \
+						sum += cacheA[i] * read_imagef(B" + to_string(j) + ", sampler, (int2)(col, i)).x; \
 					}";
 		}
 		code += "	write_imagef(C, (int2)(col, row), sum); \
