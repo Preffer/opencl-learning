@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 		code += "__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;";
 		code += "__constant int SIZE = " + to_string(SIZE) + ";";
 		code +=	"__kernel void prod(";
-		
+
 		for(int i = 0; i < SLICE; i++){
 			code += "__read_only image2d_t A" + to_string(i) + ", ";
 			code += "__read_only image2d_t B" + to_string(i) + ", ";
@@ -79,17 +79,15 @@ int main(int argc, char *argv[]) {
 		code += "__write_only image2d_t C) { \
 					const int col = get_global_id(0); \
 					const int row = get_global_id(1); \
-					float sum = 0; \
-					for (int i = 0; i < SIZE; i++) { \
-						const int2 coordA = (int2)(i, row); \
-						const int2 coordB = (int2)(col, i);";
+					float sum = 0;";
 
-		for(int i = 0; i < SLICE; i++){
-			code += 	"sum += read_imagef(A" + to_string(i) + ", sampler, coordA).x * read_imagef(B" + to_string(i) + ", sampler, coordB).x;";
+
+		for(int j = 0; j < SLICE; j++){
+			code += "for (int i = 0; i < SIZE; i++) { \
+						sum += read_imagef(A" + to_string(j) + ", sampler, (int2)(i, row)).x * read_imagef(B" + to_string(j) + ", sampler, (int2)(col, i)).x; \
+					}";
 		}
-
-		code += "	} \
-					write_imagef(C, (int2)(col, row), sum); \
+		code += "	write_imagef(C, (int2)(col, row), sum); \
 				}";
 
 		Program::Sources source(1, make_pair(code.c_str(), code.length() + 1));
@@ -137,7 +135,7 @@ int main(int argc, char *argv[]) {
 				logTime("Finish Computation Block (" + to_string(row) + ", " + to_string(col) + ")");
 				
 				C[row * SLICE + col] = (float*) queue.enqueueMapImage(*matrixC, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
-				
+
 				for(int i = 0; i < SLICE; i++){
 					delete matrixB[i];
 				}
