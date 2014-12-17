@@ -4,9 +4,11 @@
 #include <fstream>
 #include <CL/cl.hpp>
 #include <sys/time.h>
+#include <boost/format.hpp>
 
 using namespace cl;
 using namespace std;
+using namespace boost;
 
 /*
  * Always use row-major
@@ -31,7 +33,7 @@ int main(int argc, char *argv[]) {
 	const int SIZE = RANK / SLICE;
 
 	if(RANK != SLICE * SIZE){
-		cout << "Matrix with rank " << RANK << " can't be slice into " << SLICE << "*" << SLICE << " parts";
+		cout << format("Matrix with rank %1% can't be slice into %2%*%2% parts.") % RANK % SLICE << endl;
 		return -2;
 	}
 
@@ -68,36 +70,37 @@ int main(int argc, char *argv[]) {
 
 		std::string code;
 		code += "__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;";
-		code += "__constant int SIZE = " + to_string(SIZE) + ";";
+		code += (format("__constant int SIZE = %1%;") % SIZE).str();
 		code +=	"__kernel void prod(";
 
 		for(int i = 0; i < SLICE; i++){
-			code += "__read_only image2d_t A" + to_string(i) + ", ";
-			code += "__read_only image2d_t B" + to_string(i) + ", ";
+			code += (format("__read_only image2d_t A%1%, __read_only image2d_t B%1%, ") % i).str();
 		}
 
-		code += "__write_only image2d_t C) { \
+		code += (format(
+				"__write_only image2d_t C) { \
 					const int col = get_global_id(0); \
 					const int row = get_global_id(1); \
 					float sum = 0; \
 					int localID = get_local_id(0); \
 					int localSize = get_local_size(0); \
 					int cursor; \
-					__local float cacheA[" + to_string(SIZE) + "];";
+					__local float cacheA[%1%];") % SIZE).str();
 
 		for(int j = 0; j < SLICE; j++){
-			code += "for(cursor = 0; cursor < SIZE; cursor += localSize){ \
-						cacheA[cursor + localID] = read_imagef(A" + to_string(j) + ", sampler, (int2)(cursor + localID, row)).x; \
+			code += (format(
+					"for(cursor = 0; cursor < SIZE; cursor += localSize){ \
+						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)).x; \
 					} \
 					if(cursor + localID < SIZE){ \
-						cacheA[cursor + localID] = read_imagef(A" + to_string(j) + ", sampler, (int2)(cursor + localID, row)).x; \
+						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)).x; \
 					} \
-					barrier(CLK_LOCAL_MEM_FENCE);";
-			code += "for (int i = 0; i < SIZE; i++) { \
-						sum += cacheA[i] * read_imagef(B" + to_string(j) + ", sampler, (int2)(col, i)).x; \
-					}";
+					barrier(CLK_LOCAL_MEM_FENCE); \
+					for (int i = 0; i < SIZE; i++) { \
+						sum += cacheA[i] * read_imagef(B%1%, sampler, (int2)(col, i)).x; \
+					}") % j).str();
 		}
-		code += "	write_imagef(C, (int2)(col, row), sum); \
+		code += 	"write_imagef(C, (int2)(col, row), sum); \
 				}";
 
 		Program::Sources source(1, make_pair(code.c_str(), code.length() + 1));
