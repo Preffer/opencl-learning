@@ -142,10 +142,10 @@ int main(int argc, char *argv[]) {
 				matrixC = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
 				kernel.setArg(2 * SLICE, *matrixC);
 
-				logTime("Start Computation Block (" + to_string(row) + ", " + to_string(col) + ")...");
+				logTime((boost::format("Start Computation Block (%1%, %2%)...") % row % col).str());
 				queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
 				queue.finish();
-				logTime("Finish Computation Block (" + to_string(row) + ", " + to_string(col) + ")");
+				logTime((boost::format("Finish Computation Block (%1%, %2%)") % row % col).str());
 				
 				C[row * SLICE + col] = (float*) queue.enqueueMapImage(*matrixC, CL_TRUE, CL_MAP_READ, origin, region, mapSize, NULL);
 
