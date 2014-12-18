@@ -1,6 +1,6 @@
 CC			= g++
 CPPFLAGS	= -std=c++11 -Wall -march=native -O3
-LDFLAGS		= -lOpenCL
+LDFLAGS		= -lOpenCL -lboost_program_options
 SRCS		= matrix-image.cpp
 OBJS		= $(SRCS:.cpp=.o)
 PROG		= matrix-image

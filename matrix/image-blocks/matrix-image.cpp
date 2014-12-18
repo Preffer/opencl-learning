@@ -1,14 +1,17 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <CL/cl.hpp>
 #include <sys/time.h>
 #include <boost/format.hpp>
+#include <boost/program_options.hpp>
 
 using namespace cl;
 using namespace std;
 using namespace boost;
+namespace po = boost::program_options;
 
 /*
  * Always use row-major
@@ -23,22 +26,43 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tpstart, NULL);
 
-	if (argc < 3) {
-		cout << "Usage: ./matrix-image (rank) (slice)" << endl;
+	po::options_description desc("O ptions");
+	desc.add_options()
+		("rank,r", po::value<int>()->default_value(1024), "rank of each matrix, should be divisible by 4*slice")
+		("slice,s", po::value<int>()->default_value(1), "slices of each matrix")
+		("output,o", po::value<std::string>()->default_value("no"), "output of the result {no|file|console}")
+		("help,h", "show this help info");
+
+	po::variables_map vm;
+
+	try{
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		if (vm.count("help")) {
+			cout << desc << endl;
+			return 1;
+		}
+		std::string output = vm["output"].as<std::string>();
+		if((output != "no") && (output != "file" ) && (output != "console")){
+			throw po::validation_error(po::validation_error::invalid_option_value, "output");
+		}
+		po::notify(vm);
+	} catch(po::error& e) {
+		cerr << "ERROR: " << e.what() << endl << endl;
+		cout << desc << endl;
 		return -1;
 	}
 
-	const int RANK = stoi(argv[1]);
-	const int SLICE = stoi(argv[2]);
+	const int RANK = vm["rank"].as<int>();
+	const int SLICE = vm["slice"].as<int>();
 	const int SIZE = RANK / SLICE;
 	const int PITCH = SIZE / 4;
 
-	if(RANK != SLICE * SIZE){
-		cout << format("Matrix with rank %1% can't be slice into %2%*%2% parts.") % RANK % (SLICE*4) << endl;
+	if(RANK != SLICE * PITCH * 4){
+		cout << format("Matrix with rank %1% can't be slice into 4*%2%*%2% parts.") % RANK % (SLICE) << endl;
 		return -2;
 	}
 
-	logTime("Generating Matrix...");
+	logTime((format("Generating %1%*%1% Matrix with %2% slice(s)") % RANK % SLICE).str());
 	float** A = new float*[SLICE * SLICE];
 	float** B = new float*[SLICE * SLICE];
 	float** C = new float*[SLICE * SLICE];
@@ -104,7 +128,7 @@ int main(int argc, char *argv[]) {
 		program.build(devices);
 		Kernel kernel(program, "prod");
 
-		logTime("Finish initialize OpenCL");
+		logTime("Finish Initialize OpenCL");
 
 		ImageFormat format(CL_RGBA, CL_FLOAT);
 
@@ -156,10 +180,10 @@ int main(int argc, char *argv[]) {
 
 		delete mapSize;
 
-		if(argc < 4){
-			ofstream outa("a.txt");
-			ofstream outb("b.txt");
-			ofstream outc("c.txt");
+		if(vm["output"].as<std::string>() != "no"){
+			ostringstream outa;
+			ostringstream outb;
+			ostringstream outc;
 
 			for(int blockRow = 0; blockRow < SLICE; blockRow++){
 				for(int row = 0; row < SIZE; row++){
@@ -175,10 +199,27 @@ int main(int argc, char *argv[]) {
 					outc << endl;
 				}
 			}
+
+			if(vm["output"].as<std::string>() == "file"){
+				ofstream fouta("a.txt");
+				ofstream foutb("b.txt");
+				ofstream foutc("c.txt");
+
+				fouta << outa.str();
+				foutb << outb.str();
+				foutc << outc.str();
+			} else{
+				cout << "==A==" << endl;
+				cout << outa.str() << endl;
+				cout << "==B==" << endl;
+				cout << outb.str() << endl;
+				cout << "==C==" << endl;
+				cout << outc.str() << endl;
+			}
 		}
 
 	} catch(Error error) {
-		cout << error.what() << "(" << error.err() << ")" << endl;
+		cerr << "ERROR: " << error.what() << "(" << error.err() << ")" << endl;
 	}
 
 	for(int i = 0; i < SLICE * SLICE; i++){
