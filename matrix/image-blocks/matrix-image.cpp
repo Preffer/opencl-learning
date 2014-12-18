@@ -31,9 +31,10 @@ int main(int argc, char *argv[]) {
 	const int RANK = stoi(argv[1]);
 	const int SLICE = stoi(argv[2]);
 	const int SIZE = RANK / SLICE;
+	const int PITCH = SIZE / 4;
 
 	if(RANK != SLICE * SIZE){
-		cout << format("Matrix with rank %1% can't be slice into %2%*%2% parts.") % RANK % SLICE << endl;
+		cout << format("Matrix with rank %1% can't be slice into %2%*%2% parts.") % RANK % (SLICE*4) << endl;
 		return -2;
 	}
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
 
 		std::string code;
 		code += "__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST;";
-		code += (format("__constant int SIZE = %1%;") % SIZE).str();
+		code += (format("__constant int PITCH = %1%;") % PITCH).str();
 		code +=	"__kernel void prod(";
 
 		for(int i = 0; i < SLICE; i++){
@@ -81,23 +82,29 @@ int main(int argc, char *argv[]) {
 				"__write_only image2d_t C) { \
 					const int col = get_global_id(0); \
 					const int row = get_global_id(1); \
-					float sum = 0; \
+					float4 sum = (float4)(0, 0, 0, 0); \
 					int localID = get_local_id(0); \
 					int localSize = get_local_size(0); \
 					int cursor; \
-					__local float cacheA[%1%];") % SIZE).str();
+					__local float4 cacheA[%1%];") % PITCH).str();
 
 		for(int j = 0; j < SLICE; j++){
 			code += (format(
-					"for(cursor = 0; cursor < SIZE; cursor += localSize){ \
-						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)).x; \
+					"for(cursor = 0; cursor < PITCH; cursor += localSize){ \
+						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)); \
 					} \
-					if(cursor + localID < SIZE){ \
-						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)).x; \
+					if(cursor + localID < PITCH){ \
+						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)); \
 					} \
 					barrier(CLK_LOCAL_MEM_FENCE); \
-					for (int i = 0; i < SIZE; i++) { \
-						sum += cacheA[i] * read_imagef(B%1%, sampler, (int2)(col, i)).x; \
+					for (int i = 0; i < PITCH; i++) { \
+						float4 dataA = cacheA[i]; \
+						sum += (float4)( \
+							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col))), \
+							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col + 1))), \
+							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col + 2))), \
+							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col + 3))) \
+						); \
 					}") % j).str();
 		}
 		code += 	"write_imagef(C, (int2)(col, row), sum); \
@@ -111,7 +118,7 @@ int main(int argc, char *argv[]) {
 
 		logTime("Finish initialize OpenCL");
 
-		ImageFormat format(CL_R, CL_FLOAT);
+		ImageFormat format(CL_RGBA, CL_FLOAT);
 
 		cl::size_t<3> origin;
 		origin[0] = 0;
@@ -119,7 +126,7 @@ int main(int argc, char *argv[]) {
 		origin[2] = 0;
 		
 		cl::size_t<3> region;
-		region[0] = SIZE;
+		region[0] = PITCH;
 		region[1] = SIZE;
 		region[2] = 1;
 
@@ -131,19 +138,19 @@ int main(int argc, char *argv[]) {
 
 		for(int row = 0; row < SLICE; row++){
 			for(int i = 0; i < SLICE; i++){
-				matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, A[row * SLICE + i]);
+				matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, PITCH, SIZE, 0, A[row * SLICE + i]);
 				kernel.setArg(2 * i, *(matrixA[i]));
 			}
 			for(int col = 0; col < SLICE; col++){
 				for(int i = 0; i < SLICE; i++){
-					matrixB[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, SIZE, 0, B[i * SLICE + col]);
+					matrixB[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, PITCH, SIZE, 0, B[i * SLICE + col]);
 					kernel.setArg(2 * i + 1, *(matrixB[i]));
 				}
-				matrixC = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, SIZE);
+				matrixC = new Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, PITCH, SIZE);
 				kernel.setArg(2 * SLICE, *matrixC);
 
 				logTime((boost::format("Start Computation Block (%1%, %2%)...") % row % col).str());
-				queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, SIZE), NullRange);
+				queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(PITCH, SIZE), NullRange);
 				queue.finish();
 				logTime((boost::format("Finish Computation Block (%1%, %2%)") % row % col).str());
 				
@@ -171,7 +178,7 @@ int main(int argc, char *argv[]) {
 					for(int blockCol = 0; blockCol < SLICE; blockCol++){
 						for(int col = 0; col < SIZE; col++){
 							outa << A[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
-							outb << B[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
+							outb << B[blockRow * SLICE + blockCol][col * SIZE + row] << " ";
 							outc << C[blockRow * SLICE + blockCol][row * SIZE + col] << " ";
 						}
 					}
