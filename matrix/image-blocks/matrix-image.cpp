@@ -17,10 +17,10 @@ namespace po = boost::program_options;
  * Always use row-major
  */
 
-struct timeval tpstart, tpend;
-double timeuse;
+struct timeval tpstart, tpend, tpcalc;
 
 void logTime(std::string message);
+void showFlops(int rank);
 
 int main(int argc, char *argv[]) {
 
@@ -148,6 +148,8 @@ int main(int argc, char *argv[]) {
 		Image2D** matrixB = new Image2D*[SLICE];
 		Image2D* matrixC = NULL;
 
+		gettimeofday(&tpcalc, NULL);
+
 		for(int row = 0; row < SLICE; row++){
 			for(int i = 0; i < SLICE; i++){
 				matrixA[i] = new Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, PITCH, SIZE, 0, A[row * SLICE + i]);
@@ -179,6 +181,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		delete mapSize;
+
+		showFlops(RANK);
 
 		if(vm["output"].as<std::string>() != "no"){
 			ostringstream outa;
@@ -235,7 +239,12 @@ int main(int argc, char *argv[]) {
 
 void logTime(std::string message) {
 	gettimeofday(&tpend, NULL);
-	timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
-	timeuse /= 1000000;
+	float timeuse = (1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec) / 1000000.0;
 	cout << "[" << timeuse << "] " << message << endl;
+}
+
+void showFlops(int rank){
+	float timeuse = (1000000 * (tpend.tv_sec - tpcalc.tv_sec) + tpend.tv_usec - tpcalc.tv_usec) / 1000000.0;
+	float gflops = pow(rank, 3) / 536870912 / timeuse;
+	cout << format("%1% GFLOPS / %2%s Computing Time") % gflops % timeuse << endl;
 }
