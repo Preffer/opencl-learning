@@ -78,27 +78,15 @@ int main(int argc, char *argv[]) {
 			code += (format("__read_only image2d_t A%1%, __read_only image2d_t B%1%, ") % i).str();
 		}
 
-		code += (format(
-				"__write_only image2d_t C) { \
+		code += "__write_only image2d_t C) { \
 					const int col = get_global_id(0); \
 					const int row = get_global_id(1); \
-					float4 sum = (float4)(0, 0, 0, 0); \
-					int localID = get_local_id(0); \
-					int localSize = get_local_size(0); \
-					int cursor; \
-					__local float4 cacheA[%1%];") % PITCH).str();
+					float4 sum = (float4)(0, 0, 0, 0);";
 
 		for(int j = 0; j < SLICE; j++){
 			code += (format(
-					"for(cursor = 0; cursor < PITCH; cursor += localSize){ \
-						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)); \
-					} \
-					if(cursor + localID < PITCH){ \
-						cacheA[cursor + localID] = read_imagef(A%1%, sampler, (int2)(cursor + localID, row)); \
-					} \
-					barrier(CLK_LOCAL_MEM_FENCE); \
-					for (int i = 0; i < PITCH; i++) { \
-						float4 dataA = cacheA[i]; \
+					"for (int i = 0; i < PITCH; i++) { \
+						float4 dataA = read_imagef(A%1%, sampler, (int2)(i, row)); \
 						sum += (float4)( \
 							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col))), \
 							dot(dataA, read_imagef(B%1%, sampler, (int2)(i, col + 1))), \
