@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	const int R = stoi(argv[1]);
+	const int SIZE = R / 4;
 
 	float* A = new float[R * R];
 	float* B = new float[R * R];
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
 		program.build(devices);
 		Kernel kernel(program, "prod");
 
-		ImageFormat format(CL_R, CL_FLOAT);
+		ImageFormat format(CL_RGBA, CL_FLOAT);
 
 		cl::size_t<3> origin;
 		origin[0] = 0;
@@ -59,20 +60,20 @@ int main(int argc, char *argv[]) {
 		origin[2] = 0;
 		
 		cl::size_t<3> region;
-		region[0] = R;
+		region[0] = SIZE;
 		region[1] = R;
 		region[2] = 1;
 
-		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, R, R, 0, A);
-		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, R, R, 0, B);
-		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, R, R);
+		Image2D matrixA = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, R, 0, A);
+		Image2D matrixB = Image2D(context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, format, SIZE, R, 0, B);
+		Image2D matrixC = Image2D(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, format, SIZE, R);
 
 		kernel.setArg(0, matrixA);
 		kernel.setArg(1, matrixB);
 		kernel.setArg(2, matrixC);
-		kernel.setArg(3, R);
+		kernel.setArg(3, SIZE);
 
-		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(R, R), NullRange);
+		queue.enqueueNDRangeKernel(kernel, NullRange, NDRange(SIZE, R), NullRange);
 
 		queue.finish();
 		C = (float*) queue.enqueueMapImage(matrixC, CL_TRUE, CL_MAP_READ, origin, region, new ::size_t(R * sizeof(float)), NULL);
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
 			for (int row = 0; row < R; row++) {
 				for (int col = 0; col < R; col ++) {
 					outa << A[row * R + col] << " ";
-					outb << B[row * R + col] << " ";
+					outb << B[col * R + row] << " ";
 					outc << C[row * R + col] << " ";
 				}
 				outa << endl;
