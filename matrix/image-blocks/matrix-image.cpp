@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&tpstart, NULL);
 
-	po::options_description desc("O ptions");
+	po::options_description desc("Options");
 	desc.add_options()
 		("rank,r", po::value<int>()->default_value(1024), "rank of each matrix, should be divisible by 4*slice")
 		("slice,s", po::value<int>()->default_value(1), "slices of each matrix")
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 		}
 		po::notify(vm);
 	} catch(po::error& e) {
-		cerr << "ERROR: " << e.what() << endl << endl;
+		cerr << "Error: " << e.what() << endl << endl;
 		cout << desc << endl;
 		return -1;
 	}
@@ -58,7 +58,8 @@ int main(int argc, char *argv[]) {
 	const int PITCH = SIZE / 4;
 
 	if(RANK != SLICE * PITCH * 4){
-		cout << format("Matrix with rank %1% can't be slice into 4*%2%*%2% parts.") % RANK % (SLICE) << endl;
+		cerr << "Error: " << format("%1%*%1% matrix can't be slice into 4*%2%*%2% parts.") % RANK % (SLICE) << endl;
+		cout << desc << endl;
 		return -2;
 	}
 
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
 		}
 
 	} catch(Error error) {
-		cerr << "ERROR: " << error.what() << "(" << error.err() << ")" << endl;
+		cerr << "Error: " << error.what() << "(" << error.err() << ")" << endl;
 	}
 
 	for(int i = 0; i < SLICE * SLICE; i++){
