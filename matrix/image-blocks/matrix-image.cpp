@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	const int PITCH = SIZE / 4;
 
 	if(RANK != SLICE * PITCH * 4){
-		cerr << "Error: " << format("%1%*%1% matrix can't be slice into 4*%2%*%2% parts.") % RANK % (SLICE) << endl;
+		cerr << format("Error: %1%*%1% matrix can't be slice into 4 * %2%*%2% parts.") % RANK % SLICE << endl;
 		cout << desc << endl;
 		return -2;
 	}
@@ -223,8 +223,8 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-	} catch(Error error) {
-		cerr << "Error: " << error.what() << "(" << error.err() << ")" << endl;
+	} catch(Error& e) {
+		cerr << "Error: " << e.what() << "(" << e.err() << ")" << endl;
 	}
 
 	for(int i = 0; i < SLICE * SLICE; i++){
