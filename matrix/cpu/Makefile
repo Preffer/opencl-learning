@@ -1,4 +1,4 @@
-CC		= g++
+CC			= g++
 CPPFLAGS	= -std=c++11 -Wall -fopenmp -march=native -O3
 LDFLAGS		=
 SRCS		= matrix-cpu.cpp
