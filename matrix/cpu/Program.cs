@@ -15,27 +15,34 @@ namespace Matrix {
 
             int R = int.Parse(args[0]);
 
-            float[,] A = new float[R, R];
-            float[,] B = new float[R, R];
-            float[,] C = new float[R, R];
+            float[][] A = new float[R][];
+            float[][] B = new float[R][];
+            float[][] C = new float[R][];
 
             Random rand = new Random();
-            for (int i = 0; i < R; i++) {
-                for (int j = 0; j < R; j++) {
-                    A[i, j] = rand.Next(0, 100);
-                    B[i, j] = rand.Next(0, 100);
+            for (int row = 0; row < R; row++) {
+                A[row] = new float[R];
+                B[row] = new float[R];
+                C[row] = new float[R];
+                float[] a = A[row];
+                float[] b = B[row];
+                for (int col = 0; col < R; col++) {
+                    a[col] = rand.Next(0, 100);
+                    a[col] = rand.Next(0, 100);
                 }
             }
 
-            for (int row = 0; row < R; row++) {
+            Parallel.For(0, R, (int row) => {
+                float[] a = A[row];
                 for (int col = 0; col < R; col++) {
+                    float[] b = B[col];
                     float sum = 0;
                     for (int i = 0; i < R; i++) {
-                        sum += A[row, i] * B[i, col];
+                        sum += a[i] * b[i];
                     }
-                    C[row, col] = sum;
+                    C[row][col] = sum;
                 }
-            }
+            });
 
             if (args.Length > 1) {
                 StreamWriter outa = new StreamWriter("a.txt");
@@ -44,11 +51,11 @@ namespace Matrix {
 
                 for (int row = 0; row < R; row++) {
                     for (int col = 0; col < R; col++) {
-                        outa.Write(A[row, col]);
+                        outa.Write(A[row][col]);
                         outa.Write(" ");
-                        outb.Write(B[row, col]);
+                        outb.Write(B[row][col]);
                         outb.Write(" ");
-                        outc.Write(C[row, col]);
+                        outc.Write(C[row][col]);
                         outc.Write(" ");
                     }
                     outa.Write(Environment.NewLine);
