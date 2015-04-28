@@ -28,7 +28,7 @@ namespace Matrix {
                 float[] b = B[row];
                 for (int col = 0; col < R; col++) {
                     a[col] = rand.Next(0, 100);
-                    a[col] = rand.Next(0, 100);
+                    b[col] = rand.Next(0, 100);
                 }
             }
 
